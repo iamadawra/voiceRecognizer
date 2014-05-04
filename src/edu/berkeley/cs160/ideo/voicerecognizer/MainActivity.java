@@ -1,11 +1,14 @@
 package edu.berkeley.cs160.ideo.voicerecognizer;
 
 import java.util.ArrayList;
+import java.util.Timer;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -24,6 +27,9 @@ public class MainActivity extends Activity implements OnClickListener {
 	   private SpeechRecognizer sr;
 	   private static final String TAG = "MyStt3Activity";
 	   Button speakButton;
+	   private Timer speechTimeout = null;
+	   String message;
+	   AudioManager mAudioManager;
 	   @Override
 	   public void onCreate(Bundle savedInstanceState) 
 	   {
@@ -35,7 +41,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	            sr = SpeechRecognizer.createSpeechRecognizer(this);       
 	            sr.setRecognitionListener(new listener());        
 	   }
-
+	   
 	   class listener implements RecognitionListener          
 	   {
 	            public void onReadyForSpeech(Bundle params)
@@ -57,12 +63,53 @@ public class MainActivity extends Activity implements OnClickListener {
 	            public void onEndOfSpeech()
 	            {
 	                     Log.d(TAG, "onEndofSpeech");
+	                     mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, true);
 	            }
 	            public void onError(int error)
 	            {
 	                     Log.d(TAG,  "error " +  error);
-	                     mText.setText("error " + error);
+	                     switch (error)
+	         			{
+	         				case SpeechRecognizer.ERROR_AUDIO:
+	         					message = "Audio recording error";
+	         					speakButton.performClick();
+	         					break;
+	         				case SpeechRecognizer.ERROR_CLIENT:
+	         					message = "Client side error";
+	         					break;
+	         				case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+	         					message = "Insufficient permissions";
+	         					break;
+	         				case SpeechRecognizer.ERROR_NETWORK:
+	         					message = "Network error";
+	         					speakButton.performClick();
+	         					break;
+	         				case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+	         					message = "Network timeout";
+	         					speakButton.performClick();
+	         					break;
+	         				case SpeechRecognizer.ERROR_NO_MATCH:
+	         					message = "No match";
+	         					speakButton.performClick();
+	         					break;
+	         				case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+	         					message = "RecognitionService busy";
+	         					break;
+	         				case SpeechRecognizer.ERROR_SERVER:
+	         					message = "error from server";
+	         					break;
+	         				case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+	         					message = "No speech input";
+	         					speakButton.performClick();
+	         					break;
+	         				default:
+	         					message = "Not recognised";
+	         					speakButton.performClick();
+	         					break;
+	         			}
+	                     mText.setText("error " + message);
 	                     speakButton.setText("Start Listening");
+	                     
 	                     
 	            }
 	            public void onResults(Bundle results)                   
@@ -79,6 +126,11 @@ public class MainActivity extends Activity implements OnClickListener {
 	                     if (data.size() > 0){
 	                    	 speakButton.setText("Start Listening");
 	                    	 mText.setText(data.get(0).toString());
+	                    	 if (data.get(0).toString().equals("stop listening")){
+	                    		//Stop listening 
+	                    	 }else{
+	                    		 speakButton.performClick();
+	                    	 }
 	                     }
 	                     
 	            }
@@ -92,7 +144,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	            }
 	   }
 	   public void onClick(View v) {
-	            if (v.getId() == R.id.bVoice) 
+	            if (v.getId() == R.id.bVoice)
 	            {
 	            	speakButton.setText("Stop Listening");
 	                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);        
@@ -100,8 +152,9 @@ public class MainActivity extends Activity implements OnClickListener {
 	                intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,"voice.recognition.test");
 
 	                intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,5); 
-	                     sr.startListening(intent);
-	                     Log.i("111111","11111111");
+	                 mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+	                sr.startListening(intent);
+	                Log.i("111111","11111111");
 	            }
 	   }
 	@Override
