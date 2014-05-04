@@ -94,6 +94,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	         					break;
 	         				case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
 	         					message = "RecognitionService busy";
+	         					
 	         					break;
 	         				case SpeechRecognizer.ERROR_SERVER:
 	         					message = "error from server";
